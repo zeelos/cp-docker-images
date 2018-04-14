@@ -35,26 +35,15 @@ Docker Compose Environment
 --------------------------
 
 Prerequisite
-    Docker Compose is `installed <https://docs.docker.com/compose/install/>`_. It is installed by default with Docker
-    for Mac and Windows.
+    - Docker Compose is `installed <https://docs.docker.com/compose/install/>`_. It is installed by default with Docker
+      for Mac and Windows.
+    - Non-Docker for Mac Windows Users: VirtualBox is `installed <https://www.virtualbox.org/wiki/Downloads>`_.
 
 ---------------------------------
 Configure your Docker Environment
 ---------------------------------
 
-#. **Windows Only:** Create and configure the Docker Machine
-
-   **Important:** If you are using Docker for Mac or Docker for Windows, you can skip this step.
-
-   .. sourcecode:: bash
-
-     docker-machine create --driver virtualbox --virtualbox-memory 6000 confluent
-
-#. Configure your terminal window to attach it to your new Docker Machine:
-
-   .. sourcecode:: bash
-
-     docker-machine env confluent
+.. include:: includes/docker-machine.rst
 
 #. Clone the |cp| Docker Images Github Repository.
 
@@ -207,7 +196,7 @@ Docker Client Environment
 Prerequisites
     - Docker Machine is `installed <https://docs.docker.com/machine/install-machine//>`_. It is installed by default with
       Docker for Mac and Windows.
-    - VirtualBox is `installed <https://www.virtualbox.org/wiki/Downloads>`_.
+    - Non-Docker for Mac Windows Users: VirtualBox is `installed <https://www.virtualbox.org/wiki/Downloads>`_.
 
 .. contents::
     :local:
@@ -216,17 +205,7 @@ Prerequisites
 Configure your Docker Environment
 ---------------------------------
 
-#. Create and configure the Docker Machine. This example creates a VirtualBox VM named ``confluent`` with ~6 GB of memory
-   to serve as your Docker host.
-
-   .. sourcecode:: console
-
-    $ docker-machine create --driver virtualbox --virtualbox-memory 6000 confluent
-
-#. Attach your terminal window to the ``confluent`` Docker Machine:
-
-   .. sourcecode:: console
-
+.. include:: includes/docker-machine.rst
 
 Create a Docker Network
 -----------------------
@@ -276,7 +255,7 @@ Start |zk|
 
    Note that the message shows the |zk| service listening at the port you passed in as ``ZOOKEEPER_CLIENT_PORT`` above.
 
-   If the service is not running, the log messages should provide details to help you identify the problem.   A common
+   If the service is not running, the log messages should provide details to help you identify the problem.  A common
    error is:
 
    * Insufficient resources.  In rare occasions, you may see memory allocation or other low-level failures at startup. This
@@ -298,9 +277,9 @@ Start Kafka
           -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
           confluentinc/cp-kafka:4.1.0
 
-  .. note:: The ``KAFKA_ADVERTISED_LISTENERS`` variable is set to ``kafka:9092``.  This will make Kafka accessible to other
-            containers by advertising it's location on the Docker network. The same |zk| port is specified here as the
-            previous container.
+   The ``KAFKA_ADVERTISED_LISTENERS`` variable is set to ``kafka:9092``.  This will make Kafka accessible to other
+   containers by advertising it's location on the Docker network. The same |zk| port is specified here as the
+   previous container.
 
    The ``KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR`` is set to ``1`` for a single-node cluster.  If you have three or more
    nodes, you do not need to change this from the default.
@@ -336,7 +315,8 @@ Create a Topic and Produce Data
     $ docker run \
       --net=confluent \
       --rm confluentinc/cp-kafka:4.1.0 \
-      kafka-topics --create --topic foo --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+      kafka-topics --create --topic foo --partitions 1 --replication-factor 1 \
+      --if-not-exists --zookeeper zookeeper:2181
 
    You should see the following:
 
@@ -369,7 +349,8 @@ Create a Topic and Produce Data
       --net=confluent \
       --rm \
       confluentinc/cp-kafka:4.1.0 \
-      bash -c "seq 42 | kafka-console-producer --request-required-acks 1 --broker-list kafka:9092 --topic foo && echo 'Produced 42 messages.'"
+      bash -c "seq 42 | kafka-console-producer --request-required-acks 1 \
+      --broker-list kafka:9092 --topic foo && echo 'Produced 42 messages.'"
 
    This command will use the built-in Kafka Console Producer to produce 42 simple messages to the topic. After running the command, you should see the following:
 
@@ -535,41 +516,6 @@ an overview of how to use |c3| with console producers and consumers to monitor c
 Stream Monitoring
 -----------------
 
-#. Launch the |c3-short| image by connecting to the |zk| and Kafka containers that are already running.
-
-   .. sourcecode:: console
-
-    $ docker-machine ssh confluent
-
-   Your output should resemble:
-
-   .. sourcecode:: console
-
-                            ##         .
-                      ## ## ##        ==
-                   ## ## ## ## ##    ===
-               /"""""""""""""""""\___/ ===
-          ~~~ {~~ ~~~~ ~~~ ~~~~ ~~~ ~ /  ===- ~~~
-               \______ o           __/
-                 \    \         __/
-                  \____\_______/
-     _                 _   ____     _            _
-    | |__   ___   ___ | |_|___ \ __| | ___   ___| | _____ _ __
-    | '_ \ / _ \ / _ \| __| __) / _` |/ _ \ / __| |/ / _ \ '__|
-    | |_) | (_) | (_) | |_ / __/ (_| | (_) | (__|   <  __/ |
-    |_.__/ \___/ \___/ \__|_____\__,_|\___/ \___|_|\_\___|_|
-    Boot2Docker version 18.05.0-ce, build HEAD : b5d6989 - Thu May 10 16:35:28 UTC 2018
-    Docker version 18.05.0-ce, build f150324
-
-
-#. Create a directory on the Docker Machine host for |c3-short| data mounted volumes and exit.
-
-   .. sourcecode:: console
-
-    docker@confluent:~$ mkdir -p /tmp/control-center/data
-    docker@confluent:~$ exit
-
-
 #. Start |c3-short|, binding its data directory to the directory you just created and its HTTP interface to port 9021.
 
    .. sourcecode:: console
@@ -589,7 +535,7 @@ Stream Monitoring
       -e CONTROL_CENTER_CONNECT_CLUSTER=http://kafka-connect:8082 \
       confluentinc/cp-enterprise-control-center:4.1.0
 
-   |c3-short| will create the topics it needs in Kafka.
+   |c3-short| will create the topics it needs in Kafka, including the URL for a Kafka Connect cluster that is created in a later step.
 
 #. Optional: Verify that it started correctly by searching its logs with the following command:
 
@@ -604,8 +550,10 @@ Stream Monitoring
     [2016-08-26 18:47:26,809] INFO Started NetworkTrafficServerConnector@26d96e5{HTTP/1.1}{0.0.0.0:9021} (org.eclipse.jetty.server.NetworkTrafficServerConnector)
     [2016-08-26 18:47:26,811] INFO Started @5211ms (org.eclipse.jetty.server.Server)
 
-#. To see the |c3-short| UI, open the link ``http://<ip-of-docker-host>:9021`` in your browser. You can find the Docker
-   host IP by running this command:
+#. To see the |c3-short| UI, open the link http://localhost:9021 in your browser.
+
+   If you are running Docker Machine, the UI will be running at ``http://<docker-host-ip>:9021``. You can find the Docker
+   Host IP by running this command: 
 
    .. sourcecode:: console
 
@@ -683,7 +631,6 @@ Stream Monitoring
     ....
     1000
     Processed a total of 1000 messages
-
 
 In this step you have intentionally setup a slow consumer to consume at a rate of 1000 messages per second. You'll soon
 reach a steady state where the producer window shows an update every 10 seconds while the consumer window shows bursts of
@@ -769,7 +716,7 @@ topics. You will create these topics in the Kafka cluster you have running from 
 
    .. sourcecode:: bash
 
-    docker run \
+    $ docker run \
       --net=confluent \
       --rm \
       confluentinc/cp-kafka:4.1.0 \
@@ -819,6 +766,7 @@ topics. You will create these topics in the Kafka cluster you have running from 
 
 #. Optional: Verify that the Connect worker is up by running the following command to search the logs:
 
+
    .. sourcecode:: console
 
         $ docker logs kafka-connect | grep started
@@ -829,7 +777,6 @@ topics. You will create these topics in the Kafka cluster you have running from 
 
         [2016-08-25 18:25:19,665] INFO Herder started (org.apache.kafka.connect.runtime.distributed.DistributedHerder)
         [2016-08-25 18:25:19,676] INFO Kafka Connect started (org.apache.kafka.connect.runtime.Connect)
-
 
 #. Create the directory to store the input and output data files.
 
@@ -878,11 +825,12 @@ topics. You will create these topics in the Kafka cluster you have running from 
 
        .. sourcecode:: console
 
-            $ docker run \
-              --net=confluent \
-              --rm \
-              confluentinc/cp-kafka:4.1.0 \
-              kafka-console-consumer --bootstrap-server localhost:29092 --topic quickstart-data --from-beginning --max-messages 10
+        $ docker run \
+          --net=confluent \
+          --rm \
+          confluentinc/cp-kafka:4.1.0 \
+          kafka-console-consumer --bootstrap-server kafka:9092 --topic \
+          quickstart-data --from-beginning --max-messages 10
 
 
        You should see the following:
@@ -909,8 +857,9 @@ topics. You will create these topics in the Kafka cluster you have running from 
    .. sourcecode:: console
 
     $ docker exec kafka-connect curl -X POST -H "Content-Type: application/json" \
-        --data '{"name": "quickstart-file-sink", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSinkConnector", \
-        "tasks.max":"1", "topics":"quickstart-data", "file": "/tmp/quickstart/file/output.txt"}}' \
+        --data '{"name": "quickstart-file-sink", \
+        "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSinkConnector", "tasks.max":"1", \
+        "topics":"quickstart-data", "file": "/tmp/quickstart/file/output.txt"}}' \
         http://kafka-connect:8082/connectors
 
    You should see the following output, confirming that the ``quickstart-file-sink`` connector is created and will
@@ -976,9 +925,9 @@ Next you'll see how to monitor the Kafka Connect connectors in |c3-short|.  Beca
 Cleanup
 =======
 
-After you're done, cleanup is simple.  Run the command ``docker rm -f $(docker ps -a -q)`` to delete all the containers
-you created in the steps above, ``docker volume prune`` to remove any remaining unused volumes, and ``docker network rm confluent``
-to delete the network we created.
+After you're done, cleanup is simple. Run the command ``docker rm -f $(docker ps -a -q)`` to delete all the containers
+you created in the steps above, ``docker volume prune`` to remove any remaining unused volumes, and
+``docker network rm confluent`` to delete the network that was created.
 
 If you are running Docker Machine, you can remove the virtual machine with this command: ``docker-machine rm confluent``.
 
