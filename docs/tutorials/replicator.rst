@@ -12,6 +12,7 @@ In this section, we provide a tutorial for running Replicator which replicates d
    Kafka cluster and a Kafka Connect cluster. Navigate to ``cp-docker-images/examples/enterprise-replicator``, where it is located:
 
    .. sourcecode:: bash
+
     cd cp-docker-images/examples/enterprise-replicator
 
 #. Start the Kafka and Kafka Connect clusters using Docker Compose ``create`` and ``start`` commands.

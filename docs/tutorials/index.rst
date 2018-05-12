@@ -1,9 +1,9 @@
-.. _tutorials_overview :
+.. _tutorials_overview:
 
 Docker Advanced Tutorials
 =========================
 
-This section provides advanced tutorials for using specific Confluent Platform features on Docker. 
+This section provides advanced tutorials for using specific |cp| features on Docker.
 
 **Table of Contents**
 

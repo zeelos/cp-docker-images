@@ -3,7 +3,7 @@
 Docker Configuration
 ====================
 
-You can install the Confluent Platform using Docker images. This section provides an overview of Confluent's Docker images for the Confluent Platform.
+You can install the |cp| using Docker images. This section provides an overview of Confluent's Docker images for the |cp|.
 
 
 .. contents::
@@ -11,9 +11,9 @@ You can install the Confluent Platform using Docker images. This section provide
 
 Confluent Docker Images
 -----------------------
-The Confluent Platform Docker images support passing configuration variables dynamically using environment variables.  More specifically, we use the Docker ``-e`` or ``--env`` flags for setting various settings in the respective images when starting up the images.
+The |cp| Docker images support passing configuration variables dynamically using environment variables.  More specifically, we use the Docker ``-e`` or ``--env`` flags for setting various settings in the respective images when starting up the images.
 
-The images are available for Confluent Platform 3.0.1 and greater. Images are available on `DockerHub <https://hub.docker.com/u/confluentinc/>`_ for each component of the Confluent Platform. Alternatively, the source files for the images are `available on Github <https://github.com/confluentinc/cp-docker-images>`_ if you would prefer to extend and/or rebuild the images and upload them to your own DockerHub repository.
+The images are available for |cp| 3.0.1 and greater. Images are available on `DockerHub <https://hub.docker.com/u/confluentinc/>`_ for each component of the |cp|. Alternatively, the source files for the images are `available on Github <https://github.com/confluentinc/cp-docker-images>`_ if you would prefer to extend and/or rebuild the images and upload them to your own DockerHub repository.
 
 The table below lists the available images and the Confluent software packages they contain.  You'll note that some images are identified as ```cp-enterprise-${component_name}```.   These images include proprietary components that must be licensed from Confluent when deployed.
 
@@ -82,7 +82,7 @@ Configuration Notes
 Configuration Parameters
 ------------------------
 
-Some configuration variables are required when starting up the Docker images.  We have outlined those variables below for each component along with an example of how to pass them.  For a full list of all available configuration options for each Confluent Platform component, you should refer to their respective documentation.
+Some configuration variables are required when starting up the Docker images.  We have outlined those variables below for each component along with an example of how to pass them.  For a full list of all available configuration options for each |cp| component, you should refer to their respective documentation.
 
 .. contents::
     :depth: 1
@@ -240,7 +240,7 @@ The following settings must be passed to run the REST Proxy Docker image.
 
 ``KAFKA_REST_HOST_NAME``
 
-  The host name used to generate absolute URLs in responses.  Hostname is required because it defaults to the Java canonical host name for the container, which may not always be resolvable in a Docker environment.  For more details, please refer to the Confluent Platform documentation on :ref:`REST proxy deployment <kafka-rest-deployment>`.
+  The host name used to generate absolute URLs in responses.  Hostname is required because it defaults to the Java canonical host name for the container, which may not always be resolvable in a Docker environment.  For more details, please refer to the |cp| documentation on :ref:`REST proxy deployment <kafka-rest-deployment>`.
 
 ``KAFKA_REST_ZOOKEEPER_CONNECT``
 
