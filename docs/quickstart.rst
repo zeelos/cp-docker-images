@@ -9,28 +9,34 @@ environment.  By the end of this quick start, you will have a functional |cp| de
 This quick start builds a single node Docker environment. You will configure Kafka and |zk| to store data locally in their
 Docker containers.
 
-You can install |cp| using either :ref:`Docker Compose <quickstart_compose>` or the :ref:`Docker client <quickstart_engine>`.
-With Docker Compose you can launch |zk| and Kafka with a single command.
-
 Prerequisites
-    .. include:: includes/docker-version.rst
+    - .. include:: includes/docker-version.rst
 
-.. contents::
+    - `curl <https://curl.haxx.se/>`_
+
+.. contents:: Contents
     :local:
     :depth: 1
 
 .. _quickstart_compose:
 
-=============================
-Setup Your Docker Environment
-=============================
+=====================================
+Step 1: Setup Your Docker Environment
+=====================================
 
-Docker Compose
---------------
+You can install |cp| using either :ref:`Docker Compose <quickstart_compose>` or the :ref:`Docker client <quickstart_engine>`.
+Docker Compose is recommended since you can launch |cp| with a single invocation of a configuration file.
+
+.. contents::
+    :local:
+    :depth: 1
+
+Docker Compose Environment
+--------------------------
 
 Prerequisite
-    - Docker Compose is `installed <https://docs.docker.com/compose/install/>`_. It is installed by default with Docker
-      for Mac and Windows. 
+    Docker Compose is `installed <https://docs.docker.com/compose/install/>`_. It is installed by default with Docker
+    for Mac and Windows.
 
 ---------------------------------
 Configure your Docker Environment
@@ -132,8 +138,9 @@ container.
 
    .. sourcecode:: bash
 
-    docker-compose exec kafka  \
-    kafka-topics --create --topic foo --partitions 1 --replication-factor 1 --if-not-exists --zookeeper localhost:32181
+    $ docker-compose exec kafka  \
+      kafka-topics --create --topic foo --partitions 1 --replication-factor 1 \
+      --if-not-exists --zookeeper localhost:32181
 
    Your output should resemble:
 
@@ -145,7 +152,7 @@ container.
 
    .. sourcecode:: bash
 
-    docker-compose exec kafka  \
+    $ docker-compose exec kafka  \
       kafka-topics --describe --topic foo --zookeeper localhost:32181
 
    Your output should resemble:
@@ -160,21 +167,23 @@ container.
 
    .. sourcecode:: bash
 
-    docker-compose exec kafka  \
-    bash -c "seq 42 | kafka-console-producer --request-required-acks 1 --broker-list localhost:29092 --topic foo && echo 'Produced 42 messages.'"
+    $ docker-compose exec kafka  \
+      bash -c "seq 42 | kafka-console-producer --request-required-acks 1 --broker-list \
+      localhost:29092 --topic foo && echo 'Produced 42 messages.'"
 
    Your output should resemble:
 
    .. sourcecode:: bash
 
-    Produced 42 messages.
+    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Produced 42 messages.
 
 #. Read back the message using the built-in Console consumer:
 
    .. sourcecode:: bash
 
-    docker-compose exec kafka  \
-    kafka-console-consumer --bootstrap-server localhost:29092 --topic foo --from-beginning --max-messages 42
+    $ docker-compose exec kafka  \
+      kafka-console-consumer --bootstrap-server localhost:29092 --topic foo \
+      --from-beginning --max-messages 42
 
    Your output should resemble:
 
@@ -188,18 +197,12 @@ container.
     42
     Processed a total of 42 messages
 
-
-You must explicitly shut down Docker Compose. For more information, see the `docker-compose down <https://docs.docker.com/compose/reference/down/>`_
-documentation. This will delete all of the containers that you created in this quick start.
-
-   .. sourcecode:: bash
-
-       docker-compose down
+You can now continue to :ref:`docker-qs-step-2`.
 
 .. _quickstart_engine:
 
-Docker Client
--------------
+Docker Client Environment
+-------------------------
 
 Prerequisites
     - Docker Machine is `installed <https://docs.docker.com/machine/install-machine//>`_. It is installed by default with
@@ -394,16 +397,19 @@ Create a Topic and Produce Data
     Processed a total of 42 messages
 
 
-=====================
-Start Schema Registry
-=====================
+You can now continue to :ref:`docker-qs-step-2`.
 
-Now that you have Kafka and |zk| up and running, you can deploy some of the other components included in |cp|. You'll start
-by using the Schema Registry to create a new schema and send some Avro data to a Kafka topic. Although you would normally
-do this from one of your applications, you'll use a utility provided with Schema Registry to send the data without having
+.. _docker-qs-step-2:
+
+==================
+Step 2: Start |sr|
+==================
+
+In this step, |sr| is used to create a new schema and send some Avro data to a Kafka topic. Although you would normally
+do this from one of your applications, you'll use a utility provided with |sr| to send the data without having
 to write any code.
 
-#. Start the Schema Registry container:
+#. Start the |sr| container:
 
    .. sourcecode:: console
 
@@ -421,55 +427,53 @@ to write any code.
 
     $ docker logs schema-registry
 
-#. Publish data to a new topic that will leverage the Schema Registry. For the sake of simplicity, you'll launch a second
-   Schema Registry container in interactive mode, and then execute the ``kafka-avro-console-producer`` utility from there.
+#. Launch a second |sr| container in interactive mode (``-it``) and then execute the ``kafka-avro-console-producer`` utility
+   from there. This publishes data to a new topic that will leverage the |sr|.
 
    .. sourcecode:: console
 
     $ docker run -it --net=confluent --rm confluentinc/cp-schema-registry:4.1.0 bash
 
 
-#. Direct the utility at the local Kafka cluster, instruct it to write to the topic ``bar``, read each line of input as an
-   Avro message, validate the schema against the Schema Registry at the specified URL, and finally indicate the format
-   of the data.
+   #. Run the Kafka console roducer against your Kafka cluster, instruct it to write to the topic ``bar``, read each line
+      of input as an Avro message, validate the schema against the |sr| at the specified URL, and indicate the format of
+      the data.
 
-   .. sourcecode:: console
+      .. sourcecode:: console
 
-    # /usr/bin/kafka-avro-console-producer \
-      --broker-list kafka:9092 --topic bar \
-      --property schema.registry.url=http://schema-registry:8081 \
-      --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"f1","type":"string"}]}'
+        # /usr/bin/kafka-avro-console-producer \
+          --broker-list kafka:9092 --topic bar \
+          --property schema.registry.url=http://schema-registry:8081 \
+          --property value.schema='{"type":"record","name":"myrecord","fields":[{"name":"f1","type":"string"}]}'
 
-   After it has started, the process will wait for you to enter messages, one per line, and will send them immediately
-   when you hit the ``Enter`` key. Try entering a few messages:
+      After it has started, the process waits for you to enter messages, one per line, and will send them immediately
+      when you hit the ``Enter`` key.
 
-   ::
+      .. tip:: If you hit ``Enter`` with an empty line, it will be interpreted as a null value and cause an error. You
+                can simply restart the console producer again to continue sending messages.
 
-    {"f1": "value1"}
-    {"f1": "value2"}
-    {"f1": "value3"}
+   #. Enter these messages:
 
-   .. note::
+      .. sourcecode:: console
 
-    If you hit ``Enter`` with an empty line, it will be interpreted as a null value and cause an error. You can simply
-    start the console producer again to continue sending messages.
+        {"f1": "value1"}
+        {"f1": "value2"}
+        {"f1": "value3"}
 
-   When you're done, use ``Ctrl+C`` or ``Ctrl+D`` to stop the producer client.  You can then type ``exit`` to leave the
-   container altogether.  Now that you've written avro data to Kafka, you should check that the data was actually produced
-   as expected to consume it.  Although the Schema Registry also ships with a built-in console consumer utility, you'll
-   instead demonstrate how to read it from outside the container on your local machine via the REST Proxy.  The REST
-   Proxy depends on the Schema Registry when producing/consuming avro data, so you'll need to pass in the details for
-   the detached Schema Registry container you launched above.
+   #. Use ``Ctrl+C`` or ``Ctrl+D`` to stop the producer client. You can then type ``exit`` to leave the container altogether.
 
-================
-Start REST Proxy
-================
+========================
+Step 3: Start REST Proxy
+========================
 
 This section describes how to deploy the REST Proxy container and then consume data from the Confluent REST Proxy service.
+This demonstrates how to read the data produced from outside the container on your local machine via the REST Proxy. The REST
+Proxy depends on the |sr| when producing and consuming Avro data, so must pass in the details for the detached |sr| container
+that you launched in the previous step.
 
-  First, start up the REST Proxy:
+#. Start up the REST Proxy:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker run -d \
       --net=confluent \
@@ -480,62 +484,95 @@ This section describes how to deploy the REST Proxy container and then consume d
       -e KAFKA_REST_HOST_NAME=kafka-rest \
       confluentinc/cp-kafka-rest:4.1.0
 
-  For the next two steps, you're going to use CURL commands to talk to the REST Proxy. Your deployment steps thus far have ensured that both the REST Proxy container and the Schema Registry container are accessible directly through network ports on your local host.  The REST Proxy service is listening at http://localhost:8082  As above, you'll launch a new Docker container from which to execute your commands:
+   For the next two steps, you're going to use curl commands to talk to the REST Proxy. Your deployment steps thus far
+   have ensured that both the REST Proxy container and the |sr| container are accessible directly through network ports
+   on your local host. The REST Proxy service is listening at http://localhost:8082.
 
-  .. sourcecode:: console
+#. Launch a new Docker container to execute your commands from:
+
+   .. sourcecode:: console
 
     $ docker run -it --net=confluent --rm confluentinc/cp-schema-registry:4.1.0 bash
 
-  The first step in consuming data via the REST Proxy is to create a consumer instance.
+   #. Create a consumer instance.
 
-  .. sourcecode:: console
+      .. sourcecode:: console
 
-    # curl -X POST -H "Content-Type: application/vnd.kafka.v1+json" \
-      --data '{"name": "my_consumer_instance", "format": "avro", "auto.offset.reset": "smallest"}' \
-      http://kafka-rest:8082/consumers/my_avro_consumer
+        # curl -X POST -H "Content-Type: application/vnd.kafka.v1+json" \
+          --data '{"name": "my_consumer_instance", "format": "avro", "auto.offset.reset": "smallest"}' \
+          http://kafka-rest:8082/consumers/my_avro_consumer
 
-  You should see the following:
+      You should see the following:
 
-  .. sourcecode:: console
+      .. sourcecode:: console
 
-    {"instance_id":"my_consumer_instance","base_uri":"http://kafka-rest:8082/consumers/my_avro_consumer/instances/my_consumer_instance"}
+        {"instance_id":"my_consumer_instance","base_uri":"http://kafka-rest:8082/consumers/my_avro_consumer/instances/my_consumer_instance"}
 
-  Your next ``curl`` command will retrieve data from a topic in your cluster (``bar`` in this case).  The messages will be decoded, translated to JSON, and included in the response. The schema used for deserialization is retrieved automatically from the Schema Registry service, which you told the REST Proxy how to find by setting the ``KAFKA_REST_SCHEMA_REGISTRY_URL`` variable on startup.
+   #. Retrieve data from the ``bar`` topic in your cluster. The messages will be decoded, translated to JSON, and included
+      in the response. The schema used for deserialization is retrieved automatically from the |sr| service. You configured
+      this by setting the ``KAFKA_REST_SCHEMA_REGISTRY_URL`` variable on startup.
 
-  .. sourcecode:: console
+      .. sourcecode:: console
 
-    # curl -X GET -H "Accept: application/vnd.kafka.avro.v1+json" \
-      http://kafka-rest:8082/consumers/my_avro_consumer/instances/my_consumer_instance/topics/bar
+        # curl -X GET -H "Accept: application/vnd.kafka.avro.v1+json" \
+          http://kafka-rest:8082/consumers/my_avro_consumer/instances/my_consumer_instance/topics/bar
 
-  You should see the following:
+      You should see the following output:
 
-  .. sourcecode:: console
+      .. sourcecode:: console
 
-    [{"key":null,"value":{"f1":"value1"},"partition":0,"offset":0},{"key":null,"value":{"f1":"value2"},"partition":0,"offset":1},{"key":null,"value":{"f1":"value3"},"partition":0,"offset":2}]
+        [{"key":null,"value":{"f1":"value1"},"partition":0,"offset":0},{"key":null,"value":{"f1":"value2"},"partition":0,"offset":1},{"key":null,"value":{"f1":"value3"},"partition":0,"offset":2}]
 
-================
-Start |c3-short|
-================
+   #. Use ``Ctrl+C`` or ``Ctrl+D`` to stop the producer client. You can then type ``exit`` to leave the container altogether.
 
-The |c3-short| application provides enterprise-grade capabilities for monitoring and managing your Confluent deployment. |c3-short| is part of the Confluent Enterprise offering; a trial license will support the image for the first 30 days after your deployment.
+========================
+Step 4: Start |c3-short|
+========================
+
+:ref:`control_center` is a web-based tool for managing and monitoring Apache Kafka. This portion of the quick start provides
+an overview of how to use |c3| with console producers and consumers to monitor consumption and latency.
 
 Stream Monitoring
 -----------------
 
-This portion of the quick start provides an overview of how to use Confluent |c3-short| with console producers and consumers to monitor consumption and latency.
+#. Launch the |c3-short| image by connecting to the |zk| and Kafka containers that are already running.
 
-  You'll launch the Confluent |c3-short| image the same as you've done for earlier containers, connecting to the |zk| and Kafka containers that are already running.  This is also a good opportunity to illustrate mounted volumes, so you'll first create a directory on the Docker Machine host for |c3-short| data.
-
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker-machine ssh confluent
+
+   Your output should resemble:
+
+   .. sourcecode:: console
+
+                            ##         .
+                      ## ## ##        ==
+                   ## ## ## ## ##    ===
+               /"""""""""""""""""\___/ ===
+          ~~~ {~~ ~~~~ ~~~ ~~~~ ~~~ ~ /  ===- ~~~
+               \______ o           __/
+                 \    \         __/
+                  \____\_______/
+     _                 _   ____     _            _
+    | |__   ___   ___ | |_|___ \ __| | ___   ___| | _____ _ __
+    | '_ \ / _ \ / _ \| __| __) / _` |/ _ \ / __| |/ / _ \ '__|
+    | |_) | (_) | (_) | |_ / __/ (_| | (_) | (__|   <  __/ |
+    |_.__/ \___/ \___/ \__|_____\__,_|\___/ \___|_|\_\___|_|
+    Boot2Docker version 18.05.0-ce, build HEAD : b5d6989 - Thu May 10 16:35:28 UTC 2018
+    Docker version 18.05.0-ce, build f150324
+
+
+#. Create a directory on the Docker Machine host for |c3-short| data mounted volumes and exit.
+
+   .. sourcecode:: console
 
     docker@confluent:~$ mkdir -p /tmp/control-center/data
     docker@confluent:~$ exit
 
-  Now you start |c3-short|, binding its data directory to the directory you just created and its HTTP interface to port 9021.
 
-  .. sourcecode:: console
+#. Start |c3-short|, binding its data directory to the directory you just created and its HTTP interface to port 9021.
+
+   .. sourcecode:: console
 
     $ docker run -d \
       --name=control-center \
@@ -552,43 +589,52 @@ This portion of the quick start provides an overview of how to use Confluent |c3
       -e CONTROL_CENTER_CONNECT_CLUSTER=http://kafka-connect:8082 \
       confluentinc/cp-enterprise-control-center:4.1.0
 
-  |c3-short| will create the topics it needs in Kafka.  Check that it started correctly by searching its logs with the following command:
+   |c3-short| will create the topics it needs in Kafka.
 
-  .. sourcecode:: console
+#. Optional: Verify that it started correctly by searching its logs with the following command:
+
+   .. sourcecode:: console
 
     $ docker logs control-center | grep Started
 
-  You should see the following:
+   You should see the following:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     [2016-08-26 18:47:26,809] INFO Started NetworkTrafficServerConnector@26d96e5{HTTP/1.1}{0.0.0.0:9021} (org.eclipse.jetty.server.NetworkTrafficServerConnector)
     [2016-08-26 18:47:26,811] INFO Started @5211ms (org.eclipse.jetty.server.Server)
 
-  To see the Control Center UI, open the link http://localhost:9021 in your browser.
+#. To see the |c3-short| UI, open the link ``http://<ip-of-docker-host>:9021`` in your browser. You can find the Docker
+   host IP by running this command:
 
-  To see the |c3-short| UI, open the link http://<ip-of-docker-host>:9021 in your browser.  The Docker Host IP is displayed with the command ``docker-machine ip confluent``.  If your Docker daemon is running on a remote machine (such as an AWS EC2 instance), you'll need to allow TCP access to that instance on port 9021. This is done in AWS by adding a "Custom TCP Rule" to the instance's security group; the rule should all access to port 9021 from any source IP.
+   .. sourcecode:: console
 
-  Initially, the Stream Monitoring UI will have no data.
+    $ docker-machine ip confluent
 
-  .. figure:: images/c3-quickstart-init.png
-   :scale: 50%
-   :align: center
+   .. tip:: If your Docker daemon is running on a remote machine (such as an AWS EC2 instance), you must allow TCP access
+            to that instance on port 9021. This is done in AWS by adding a "Custom TCP Rule" to the instance's security
+            group; the rule should all access to port 9021 from any source IP.
+
+   Initially, the Stream Monitoring UI will have no data.
+
+   .. figure:: images/c3-quickstart-init.png
+    :width: 600px
 
    Confluent Control Center Initial View
 
-  Next, you'll run the console producer and consumer with monitoring interceptors configured and see the data in |c3-short|.  First you need to create a topic for testing.
+#. Run the console producer and consumer with monitoring interceptors configured and see the data in |c3-short|.  First
+   you must create a topic for testing.
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker run \
       --net=confluent \
       --rm confluentinc/cp-kafka:4.1.0 \
       kafka-topics --create --topic c3-test --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
 
-  Now use the console producer with the monitoring interceptor enabled to send data
+#. Use the console producer with the monitoring interceptor enabled to send data
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ while true;
     do
@@ -601,17 +647,20 @@ This portion of the quick start provides an overview of how to use Confluent |c3
         sleep 10;
     done
 
-  This command will use the built-in Kafka Console Producer to produce 10000 simple messages on a 10 second interval to the ``c3-test`` topic. After running the command, you should see the following:
+#. Use the built-in Kafka Console Producer to produce 10000 simple messages on a 10 second interval to the ``c3-test`` topic.
+   After running the command, you should see the following:
 
-  ::
+   ::
 
     Produced 10000 messages.
 
-  The message will repeat every 10 seconds, as successive iterations of the shell loop are executed.   You can terminate the client with a ``Ctrl+C``.
+   The message will repeat every 10 seconds, as successive iterations of the shell loop are executed.   You can terminate
+   the client with a ``Ctrl+C``.
 
-  You'll use the console consumer with the monitoring interceptor enabled to read the data.  You'll want to run this command in a separate terminal window (prepared with the ``eval $(docker-machine env confluent)`` as described earlier).
+#. Use the console consumer with the monitoring interceptor enabled to read the data.  Run this command in a separate
+   terminal window (prepared with the ``eval $(docker-machine env confluent)`` as described earlier).
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ OFFSET=0
     $ while true;
@@ -626,120 +675,110 @@ This portion of the quick start provides an overview of how to use Confluent |c3
       let OFFSET=OFFSET+1000
     done
 
-  If everything is working as expected, each of the original messages you produced should be written back out:
+   If everything is working as expected, each of the original messages you produced should be written back out:
 
-  ::
+   .. sourcecode:: console
 
     1
     ....
     1000
     Processed a total of 1000 messages
 
-  You've intentionally setup a slow consumer to consume at a rate 
-  of 1000 messages per second. You'll soon reach a steady state 
-  where the producer window shows an update every 10 seconds while 
-  the consumer window shows bursts of 1000 messages received 
-  every 1 second. The monitoring activity should appear in the 
-  |c3-short| UI after 15 to 30 seconds.  If you don't see any
-  activity, use the scaling selector in the upper left hand corner 
-  of the web page to select a smaller time window (the default is 
-  4 hours, and you'll want to zoom in to a 10-minute scale).  You 
-  will notice there will be moments where the bars are colored red
-  to reflect the slow consumption of data.
 
-  .. figure:: images/c3-quickstart-monitoring-data.png
-   :scale: 50%
-   :align: center
+In this step you have intentionally setup a slow consumer to consume at a rate of 1000 messages per second. You'll soon
+reach a steady state where the producer window shows an update every 10 seconds while the consumer window shows bursts of
+1000 messages received every 1 second. The monitoring activity should appear in the |c3-short| UI after 15 to 30 seconds.
+If you don't see any activity, use the scaling selector in the upper left hand corner of the web page to select a smaller
+time window (the default is 4 hours, and you'll want to zoom in to a 10-minute scale). You will notice there will be moments
+where the bars are colored red to reflect the slow consumption of data.
+
+.. figure:: images/c3-quickstart-monitoring-data.png
+    :width: 600px
 
 Alerts
 ------
 
-Confluent |c3-short| provides alerting functionality to
-notify you when anomalous events occur in your cluster. This
-section assumes the console producer and
-consumer you launched to illustrate the stream monitoring features
+Confluent |c3-short| provides alerting functionality to notify you when anomalous events occur in your cluster. This
+section assumes the console producer and consumer you launched to illustrate the stream monitoring features
 are still running in the background.
 
-The Alerts and Overview link on the lefthand navigation sidebar displays a history of all triggered events. To begin receiving
-alerts, you'll need to create a trigger. Click the "Triggers"
-navigation item and then select "+ New trigger".
+The Alerts and Overview tabs on the lefthand navigation sidebar displays a history of all triggered events. To begin receiving
+alerts, you'll need to create a trigger. Click the "Triggers" navigation item and then select "+ New trigger".
 
-Let's configure a trigger to fire when the difference between your actual
-consumption and expected consumption is greater than 1000 messages:
+Let's configure a trigger to fire when the difference between your actual consumption and expected consumption is greater
+than 1000 messages:
 
-  .. figure:: images/c3-quickstart-new-trigger-form.png
-    :scale: 50%
-    :align: center
+.. figure:: images/c3-quickstart-new-trigger-form.png
+    :width: 600px
 
     New trigger
 
-Set the trigger name to be "Underconsumption", which is what will be displayed
-on the history page when your trigger fires. You need to select a specific
-consumer group (``qs-consumer``) for this trigger.   That's the name of
-the group you specified above in your invocation of
-``kafka-console-consumer``.
+Set the trigger name to be "Underconsumption", which is what will be displayed on the history page when your trigger fires.
+You must select a specific consumer group (``qs-consumer``) for this trigger.   That's the name of the group you specified
+above in your invocation of ``kafka-console-consumer``.
 
-Set the trigger metric to be "Consumption difference" where the
-condition is "Greater than" 1000 messages. The buffer time (in seconds) is the
-wall clock time you will wait before firing the trigger to make sure the trigger
-condition is not too transient.
+Set the trigger metric to be "Consumption difference" where the condition is "Greater than" 1000 messages. The buffer
+time (in seconds) is the wall clock time you will wait before firing the trigger to make sure the trigger condition is
+not too transient.
 
-After saving the trigger, |c3-short| will now prompt us to associate an action that will execute when
-your newly created trigger fires. For now, the only action is to send an email.
-Select your new trigger and choose maximum send rate for your alert email.
+After saving the trigger, |c3-short| will now prompt us to associate an action that will execute when your newly created
+trigger fires. For now, the only action is to send an email. Select your new trigger and choose maximum send rate for your
+alert email.
 
-  .. figure:: images/c3-quickstart-new-action-form.png
-    :scale: 50%
-    :align: center
+.. figure:: images/c3-quickstart-new-action-form.png
+    :width: 600px
 
     New action
 
 
-Let's return to your trigger history page. In a short while, you should see
-a new trigger show up in your alert history. This is because you setup your
-consumer to consume data at a slower rate than your producer.
+Let's return to your trigger history page. In a short while, you should see a new trigger show up in your alert history.
+This is because you setup your consumer to consume data at a slower rate than your producer.
 
-  .. figure:: images/c3-quickstart-alerts-history.png
-    :scale: 50%
-    :align: center
+.. figure:: images/c3-quickstart-alerts-history.png
+    :width: 600px
 
     A newly triggered event
 
 
-===================
-Start Kafka Connect
-===================
+===========================
+Step 5: Start Kafka Connect
+===========================
 
-In this section, you'll create a simple data pipeline using Kafka Connect. You'll start by reading data from a file and writing that data to a new file.  You will then extend the pipeline to show how to use Connect to read from a database table.  This example is meant to be simple for the sake of this quick start.  If you'd like a more in-depth example, please refer to the `Using a JDBC Connector with avro data <tutorials/connect-avro-jdbc.html>`_ tutorial.
+In this section, a simple data pipeline is created by using Kafka Connect. You will read data from a file and write that
+data to a new file.  You will then extend the pipeline to show how to use Connect to read from a database table.
 
-First, let's start up a container with Kafka Connect.  Connect stores all its stateful data (configuration, status, and internal offsets for connectors) directly in Kafka topics. You will create these topics now in the Kafka cluster you have running from the steps above.
+Kafka Connect stores all its stateful data (configuration, status, and internal offsets for connectors) directly in Kafka
+topics. You will create these topics in the Kafka cluster you have running from the steps above.
 
-  .. sourcecode:: console
+.. tip:: You can allow Connect to auto-create these topics by enabling the ``auto.create.topics.enable`` setting. However,
+         it is recommended that you manually create these topics. With manual creation you can control settings like replication
+         factor and number of partitions.
+
+#. Start up a container with Kafka Connect.
+
+   .. sourcecode:: console
 
     $ docker run \
       --net=confluent \
       --rm \
       confluentinc/cp-kafka:4.1.0 \
-      kafka-topics --create --topic quickstart-offsets --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+      kafka-topics --create --topic quickstart-offsets --partitions 1 \
+      --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
 
-  .. note::
+#. Create a topic for storing data that you'll be sending to Kafka.
 
-    It is possible to allow connect to auto-create these topics by enabling the autocreation setting.  However, it is recommended that you do it manually, as these topics are important for connect to function and you'll likely want to control settings such as replication factor and number of partitions.
-
-Next, create a topic for storing data that you'll be sending to Kafka.
-
-  .. sourcecode:: bash
+   .. sourcecode:: bash
 
     docker run \
       --net=confluent \
       --rm \
       confluentinc/cp-kafka:4.1.0 \
-      kafka-topics --create --topic quickstart-data --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+      kafka-topics --create --topic quickstart-data --partitions 1 \
+      --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
 
+#. Optional: Verify that the topics are created before moving on:
 
-Now you should verify that the topics are created before moving on:
-
-.. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker run \
        --net=confluent \
@@ -747,11 +786,10 @@ Now you should verify that the topics are created before moving on:
        confluentinc/cp-kafka:4.1.0 \
        kafka-topics --describe --zookeeper zookeeper:2181
 
-For this example, you'll create a FileSourceConnector, a FileSinkConnector and directories for storing the input and output files.
+#. Create a FileSourceConnector and directories for storing the input and output files. This starts a Connect worker in
+   distributed mode and points Connect to the three topics that were created in the first step of this quick start.
 
-  First, let's start a Connect worker in distributed mode. This command points Connect to the three topics that you created in the first step of this quick start.
-
-  .. sourcecode:: console
+   .. sourcecode:: console
 
       $ docker run -d \
         --name=kafka-connect \
@@ -779,122 +817,130 @@ For this example, you'll create a FileSourceConnector, a FileSinkConnector and d
         -v /tmp/quickstart/file:/tmp/quickstart \
         confluentinc/cp-kafka-connect:4.1.0
 
-  Check to make sure that the Connect worker is up by running the following command to search the logs:
+#. Optional: Verify that the Connect worker is up by running the following command to search the logs:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
-    $ docker logs kafka-connect | grep started
+        $ docker logs kafka-connect | grep started
 
-  You should see the following:
+   You should see the following:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
-    [2016-08-25 18:25:19,665] INFO Herder started (org.apache.kafka.connect.runtime.distributed.DistributedHerder)
-    [2016-08-25 18:25:19,676] INFO Kafka Connect started (org.apache.kafka.connect.runtime.Connect)
-
-  Next, let's create the directory where you'll store the input and output data files.
-
-  .. sourcecode:: console
-
-    $ docker exec kafka-connect mkdir -p /tmp/quickstart/file
-
-  You will now create your first connector for reading a file from disk.  To do this, start by creating a file with some data.
-
-  .. sourcecode:: console
-
-    $ docker exec kafka-connect sh -c 'seq 1000 > /tmp/quickstart/file/input.txt'
-
-Now create the connector using the Kafka Connect REST API.
-
-  The next step is to create the File Source connector.
-
-  .. sourcecode:: console
-
-    $ docker exec kafka-connect curl -s -X POST \
-      -H "Content-Type: application/json" \
-      --data '{"name": "quickstart-file-source", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector", "tasks.max":"1", "topic":"quickstart-data", "file": "/tmp/quickstart/file/input.txt"}}' \
-      http://kafka-connect:8082/connectors
-
-  After running the command, you should see the following:
-
-  .. sourcecode:: console
-
-    {"name":"quickstart-file-source","config":{"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector","tasks.max":"1","topic":"quickstart-data","file":"/tmp/quickstart/file/input.txt","name":"quickstart-file-source"},"tasks":[]}
+        [2016-08-25 18:25:19,665] INFO Herder started (org.apache.kafka.connect.runtime.distributed.DistributedHerder)
+        [2016-08-25 18:25:19,676] INFO Kafka Connect started (org.apache.kafka.connect.runtime.Connect)
 
 
-  Before moving on, check the status of the connector using curl as shown below:
+#. Create the directory to store the input and output data files.
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
-    $ docker exec kafka-connect curl -s -X GET http://kafka-connect:8082/connectors/quickstart-file-source/status
+        $ docker exec kafka-connect mkdir -p /tmp/quickstart/file
 
-  You should see the following output including the ``state`` of the connector as ``RUNNING``:
+#. Create a connector for reading a file from disk.
 
-  .. sourcecode:: console
+   #. Create a file with some data.
 
-    {"name":"quickstart-file-source","connector":{"state":"RUNNING","worker_id":"kafka-connect:8082"},"tasks":[{"state":"RUNNING","id":0,"worker_id":"kafka-connect:8082"}]}
+      .. sourcecode:: console
 
-Now that the connector is up and running, try reading a sample of 10 records from the ``quickstart-data`` topic to check if the connector is uploading data to Kafka, as expected.
+        $ docker exec kafka-connect sh -c 'seq 1000 > /tmp/quickstart/file/input.txt'
 
-  .. sourcecode:: console
+   #. Create the connector using the Kafka Connect REST API.
 
-    $ docker run \
-     --net=confluent \
-     --rm \
-     confluentinc/cp-kafka:4.1.0 \
-     kafka-console-consumer --bootstrap-server kafka:9092 --topic quickstart-data --from-beginning --max-messages 10
+      .. sourcecode:: console
 
-  You should see the following:
+        $ docker exec kafka-connect curl -s -X POST \
+          -H "Content-Type: application/json" \
+          --data '{"name": "quickstart-file-source", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector", "tasks.max":"1", "topic":"quickstart-data", "file": "/tmp/quickstart/file/input.txt"}}' \
+          http://kafka-connect:8082/connectors
 
-  .. sourcecode:: console
+      Your output should look like the following:
 
-    {"schema":{"type":"string","optional":false},"payload":"1"}
-    {"schema":{"type":"string","optional":false},"payload":"2"}
-    {"schema":{"type":"string","optional":false},"payload":"3"}
-    {"schema":{"type":"string","optional":false},"payload":"4"}
-    {"schema":{"type":"string","optional":false},"payload":"5"}
-    {"schema":{"type":"string","optional":false},"payload":"6"}
-    {"schema":{"type":"string","optional":false},"payload":"7"}
-    {"schema":{"type":"string","optional":false},"payload":"8"}
-    {"schema":{"type":"string","optional":false},"payload":"9"}
-    {"schema":{"type":"string","optional":false},"payload":"10"}
-    Processed a total of 10 messages
+      .. sourcecode:: console
 
-  Success!  You now have a functioning source connector!  Now you can bring balance to the universe by launching a File Sink to read from this topic and write to an output file.  You can do so using the following command:
+        {"name":"quickstart-file-source","config":{"connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector","tasks.max":"1","topic":"quickstart-data","file":"/tmp/quickstart/file/input.txt","name":"quickstart-file-source"},"tasks":[]}
 
-  .. sourcecode:: console
+    #. Optional: verify the status of the connector using this curl command:
+
+       .. sourcecode:: console
+
+            $ docker exec kafka-connect curl -s -X GET http://kafka-connect:8082/connectors/quickstart-file-source/status
+
+       You should see the following output including the ``state`` of the connector as ``RUNNING``:
+
+       .. sourcecode:: console
+
+        {"name":"quickstart-file-source","connector":{"state":"RUNNING","worker_id":"kafka-connect:8082"},"tasks":[{"state":"RUNNING","id":0,"worker_id":"kafka-connect:8082"}]}
+
+    #. Optional: Read a sample of 10 records from the ``quickstart-data`` topic to check if the connector is uploading data to
+       Kafka. You should run this command in a separate terminal window, retaining the SSH session to the Docker Host for
+       later commands.
+
+       .. sourcecode:: console
+
+            $ docker run \
+              --net=confluent \
+              --rm \
+              confluentinc/cp-kafka:4.1.0 \
+              kafka-console-consumer --bootstrap-server localhost:29092 --topic quickstart-data --from-beginning --max-messages 10
+
+
+       You should see the following:
+
+       .. sourcecode:: console
+
+            {"schema":{"type":"string","optional":false},"payload":"1"}
+            {"schema":{"type":"string","optional":false},"payload":"2"}
+            {"schema":{"type":"string","optional":false},"payload":"3"}
+            {"schema":{"type":"string","optional":false},"payload":"4"}
+            {"schema":{"type":"string","optional":false},"payload":"5"}
+            {"schema":{"type":"string","optional":false},"payload":"6"}
+            {"schema":{"type":"string","optional":false},"payload":"7"}
+            {"schema":{"type":"string","optional":false},"payload":"8"}
+            {"schema":{"type":"string","optional":false},"payload":"9"}
+            {"schema":{"type":"string","optional":false},"payload":"10"}
+            Processed a total of 10 messages
+
+       Success!  You now have a functioning source connector!
+
+#. Launch a File Sink to read from this topic and write to an output file.  Run the following command from the Docker
+  Host session started earlier:
+
+   .. sourcecode:: console
 
     $ docker exec kafka-connect curl -X POST -H "Content-Type: application/json" \
-        --data '{"name": "quickstart-file-sink", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSinkConnector", "tasks.max":"1", "topics":"quickstart-data", "file": "/tmp/quickstart/file/output.txt"}}' \
+        --data '{"name": "quickstart-file-sink", "config": {"connector.class":"org.apache.kafka.connect.file.FileStreamSinkConnector", \
+        "tasks.max":"1", "topics":"quickstart-data", "file": "/tmp/quickstart/file/output.txt"}}' \
         http://kafka-connect:8082/connectors
 
-  You should see the output below in your terminal window, confirming that the ``quickstart-file-sink`` connector has been created and will write to ``/tmp/quickstart/file/output.txt``:
+   You should see the following output, confirming that the ``quickstart-file-sink`` connector is created and will
+   write to ``/tmp/quickstart/file/output.txt``:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     {"name":"quickstart-file-sink","config":{"connector.class":"org.apache.kafka.connect.file.FileStreamSinkConnector","tasks.max":"1","topics":"quickstart-data","file":"/tmp/quickstart/file/output.txt","name":"quickstart-file-sink"},"tasks":[]}
 
-  As you did before, check the status of the connector:
+#. Optional: Verify the status of the connector:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker exec kafka-connect curl -s -X GET http://kafka-connect:8082/connectors/quickstart-file-sink/status
 
-  You should see the following:
+   You should see the following:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     {"name":"quickstart-file-sink","connector":{"state":"RUNNING","worker_id":"kafka-connect:8082"},"tasks":[{"state":"RUNNING","id":0,"worker_id":"kafka-connect:28082"}]}
 
-  Finally, you can check the file to see if the data is present.
+#. Optional: Check the file to see if the data is present.
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     $ docker exec kafka-connect cat /tmp/quickstart/file/output.txt
 
-  If everything worked as planned, you should see all of the data you originally wrote to the input file:
+   You should see all of the data you originally wrote to the input file:
 
-  .. sourcecode:: console
+   .. sourcecode:: console
 
     1
     ...
@@ -910,13 +956,11 @@ Next you'll see how to monitor the Kafka Connect connectors in |c3-short|.  Beca
 
   .. figure:: images/c3-quickstart-connect-view-src.png
    :scale: 50%
-   :align: center
 
    Confluent Control Center showing a Connect source
 
   .. figure:: images/c3-quickstart-connect-view-sink.png
    :scale: 50%
-   :align: center
 
    Confluent Control Center showing a Connect sink
 
@@ -925,7 +969,6 @@ Next you'll see how to monitor the Kafka Connect connectors in |c3-short|.  Beca
 
   .. figure:: images/c3-quickstart-connect-monitoring.png
    :scale: 50%
-   :align: center
 
    Confluent Control Center monitoring Kafka Connect
 
@@ -933,10 +976,18 @@ Next you'll see how to monitor the Kafka Connect connectors in |c3-short|.  Beca
 Cleanup
 =======
 
-After you're done, cleanup is simple.  Run the command ``docker rm -f $(docker ps -a -q)`` to delete all the containers you created in the steps above, ``docker volume prune`` to remove any remaining unused volumes, and ``docker network rm confluent`` to delete the network we created.
+After you're done, cleanup is simple.  Run the command ``docker rm -f $(docker ps -a -q)`` to delete all the containers
+you created in the steps above, ``docker volume prune`` to remove any remaining unused volumes, and ``docker network rm confluent``
+to delete the network we created.
 
 If you are running Docker Machine, you can remove the virtual machine with this command: ``docker-machine rm confluent``.
 
+You must explicitly shut down Docker Compose. For more information, see the `docker-compose down <https://docs.docker.com/compose/reference/down/>`_
+documentation. This will delete all of the containers that you created in this quick start.
+
+.. sourcecode:: bash
+
+   $ docker-compose down
 
 Next Steps
 ~~~~~~~~~~
@@ -945,3 +996,5 @@ Next Steps
   persistent storage layer for deployed containers. With a persistent storage layer, you can stop and restart Docker images,
   such as ``cp-kafka`` and ``cp-zookeeper``, without losing their stateful data.
 - For examples of more complex target environments, see the :ref:`tutorials_overview`.
+- For more information about |sr|, see :ref:`schemaregistry_intro`.
+- For a more in-depth Kafka Connect example, see :ref:`connect_quickstart_avro_jdbc`.
