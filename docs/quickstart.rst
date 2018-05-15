@@ -233,10 +233,10 @@ Start |zk|
         -e ZOOKEEPER_CLIENT_PORT=2181 \
         confluentinc/cp-zookeeper:4.1.0
 
-  This command instructs Docker to launch an instance of the ``confluentinc/cp-zookeeper:4.1.0`` container and name it ``zookeeper``.
-  Also, the Docker network ``confluent`` and the required ZooKeeper parameter ``ZOOKEEPER_CLIENT_PORT`` are specified.
-  For a full list of the available configuration options and more details on passing environment variables into Docker
-  containers, see the :ref:`configuration reference docs <config_reference>`.
+   This command instructs Docker to launch an instance of the ``confluentinc/cp-zookeeper:4.1.0`` container and name it ``zookeeper``.
+   Also, the Docker network ``confluent`` and the required ZooKeeper parameter ``ZOOKEEPER_CLIENT_PORT`` are specified.
+   For a full list of the available configuration options and more details on passing environment variables into Docker
+   containers, see the :ref:`configuration reference docs <config_reference>`.
 
 #. Optional: Check the Docker logs to confirm that the container has booted up successfully and started the |zk| service.
 
