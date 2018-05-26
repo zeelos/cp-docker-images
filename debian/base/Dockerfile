@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM arm64v8/debian:jessie
 
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
@@ -55,8 +55,8 @@ ENV CONFLUENT_PLATFORM_LABEL=$CONFLUENT_PLATFORM_LABEL
 ENV CONFLUENT_VERSION="$CONFLUENT_MAJOR_VERSION.$CONFLUENT_MINOR_VERSION.$CONFLUENT_PATCH_VERSION"
 ENV CONFLUENT_DEB_VERSION="1"
 
-# Zulu
-ENV ZULU_OPENJDK_VERSION="8=8.17.0.3"
+# Zulu Embedded - OpenJDK 8
+ENV ZULU_OPENJDK_VERSION="ezdk-1.8.0_162-8.27.0.91-eval-linux_aarch64"
 
 # This affects how strings in Java class files are interpreted.  We want UTF-8 and this is the only locale in the
 # base image that supports it
@@ -79,10 +79,13 @@ RUN echo "===> Updating debian ....." \
     && pip install --no-cache-dir git+https://github.com/confluentinc/confluent-docker-utils@v0.0.20 \
     && apt remove --purge -y git \
     && echo "Installing Zulu OpenJDK ${ZULU_OPENJDK_VERSION}" \
-    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9 \
-    && echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list \
-    && apt-get -qq update \
-    && apt-get -y install zulu-${ZULU_OPENJDK_VERSION} \
+    # && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9 \
+    # && echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list \
+    # && apt-get -qq update \
+    # && apt-get -y install zulu-${ZULU_OPENJDK_VERSION} \
+    && mkdir -p /usr/lib/jvm \
+    && wget -qO- http://cdn.azul.com/zulu-embedded/bin/${ZULU_OPENJDK_VERSION}.tar.gz | tar xvz -C /usr/lib/jvm \
+    && update-alternatives --install /usr/bin/java java /usr/lib/jvm/${ZULU_OPENJDK_VERSION}/bin/java 100 \
     && echo "===> Installing Kerberos Patch ..." \
     && DEBIAN_FRONTEND=noninteractive apt-get -y install krb5-user \
     && rm -rf /var/lib/apt/lists/* \

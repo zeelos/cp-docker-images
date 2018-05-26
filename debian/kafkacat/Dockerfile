@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM arm64v8/debian:jessie
 
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
