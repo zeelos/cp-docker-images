@@ -55,8 +55,8 @@ ENV CONFLUENT_PLATFORM_LABEL=$CONFLUENT_PLATFORM_LABEL
 ENV CONFLUENT_VERSION="$CONFLUENT_MAJOR_VERSION.$CONFLUENT_MINOR_VERSION.$CONFLUENT_PATCH_VERSION"
 ENV CONFLUENT_DEB_VERSION="1"
 
-# Zulu
-ENV ZULU_OPENJDK_VERSION="8=8.17.0.3"
+# Eclipse OpenJ9
+ENV OPENJ9_VERSION="jdk8u162-b12_openj9-0.8.0"
 
 # This affects how strings in Java class files are interpreted.  We want UTF-8 and this is the only locale in the
 # base image that supports it
@@ -78,11 +78,14 @@ RUN echo "===> Updating debian ....." \
     && pip install --no-cache-dir --upgrade pip==${PYTHON_PIP_VERSION} \
     && pip install --no-cache-dir git+https://github.com/confluentinc/confluent-docker-utils@v0.0.20 \
     && apt remove --purge -y git \
-    && echo "Installing Zulu OpenJDK ${ZULU_OPENJDK_VERSION}" \
-    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9 \
-    && echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list \
-    && apt-get -qq update \
-    && apt-get -y install zulu-${ZULU_OPENJDK_VERSION} \
+    && echo "Installing Eclipse OpenJ9 ${OPENJ9_VERSION}" \
+    # && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9 \
+    # && echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list \
+    # && apt-get -qq update \
+    # && apt-get -y install zulu-${ZULU_OPENJDK_VERSION} \
+    && mkdir -p /usr/lib/jvm \
+    && wget -qO- https://github.com/AdoptOpenJDK/openjdk8-openj9-releases/releases/download/${OPENJ9_VERSION}/OpenJDK8-OPENJ9_x64_Linux_${OPENJ9_VERSION}.tar.gz | tar xvz -C /usr/lib/jvm \
+    && update-alternatives --install /usr/bin/java java /usr/lib/jvm/${OPENJ9_VERSION}/bin/java 100 \
     && echo "===> Installing Kerberos Patch ..." \
     && DEBIAN_FRONTEND=noninteractive apt-get -y install krb5-user \
     && rm -rf /var/lib/apt/lists/* \
