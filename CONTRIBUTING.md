@@ -12,7 +12,7 @@ guidelines:
     making.
 -   If you are introducing a new feature you may want to first submit
     your idea for feedback to the [Confluent mailing
-    list](mailto:partner-support@confluent.io).
+    list](mailto:dev@zeelos.io).
 -   Non-trivial features should include unit tests covering the new
     functionality.
 -   Bugfixes should include a unit test or integration test reproducing

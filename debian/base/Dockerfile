@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM images.zeelos.io/library/openjdk:8u212-jre-stretch-amd64
 
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
@@ -26,11 +26,11 @@ ARG ALLOW_UNSIGNED=false
 #Set an env var so that it's available in derived images
 ENV ALLOW_UNSIGNED=$ALLOW_UNSIGNED
 
-MAINTAINER partner-support@confluent.io
+MAINTAINER dev@zeelos.io
 LABEL io.confluent.docker=true
 
 # Python
-ENV PYTHON_VERSION="2.7.9-1"
+ENV PYTHON_VERSION="2.7.13-2"
 ENV PYTHON_PIP_VERSION="8.1.2"
 
 # Confluent
@@ -55,37 +55,27 @@ ENV CONFLUENT_PLATFORM_LABEL=$CONFLUENT_PLATFORM_LABEL
 ENV CONFLUENT_VERSION="$CONFLUENT_MAJOR_VERSION.$CONFLUENT_MINOR_VERSION.$CONFLUENT_PATCH_VERSION"
 ENV CONFLUENT_DEB_VERSION="1"
 
-# Zulu
-ENV ZULU_OPENJDK_VERSION="8=8.30.0.1"
-
 # This affects how strings in Java class files are interpreted.  We want UTF-8 and this is the only locale in the
 # base image that supports it
 ENV LANG="C.UTF-8"
 
 RUN echo "===> Updating debian ....." \
-    # TODO debian jessie has been deprecated and is only ex
-    && echo "deb http://archive.debian.org/debian/ jessie main" > /etc/apt/sources.list \
-    && echo "deb http://security.debian.org jessie/updates main" >> /etc/apt/sources.list \
     && apt-get -qq update \
     \
-    && echo "===> Installing curl wget netcat python...." \
+    && echo "===> Installing curl git wget netcat procps python...." \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
                 apt-transport-https \
                 curl \
                 git \
                 wget \
                 netcat \
+                procps \
                 python=${PYTHON_VERSION} \
     && echo "===> Installing python packages ..."  \
     && curl -fSL "https://bootstrap.pypa.io/get-pip.py" | python \
     && pip install --no-cache-dir --upgrade pip==${PYTHON_PIP_VERSION} \
     && pip install --no-cache-dir git+https://github.com/confluentinc/confluent-docker-utils@v0.0.20 \
     && apt remove --purge -y git \
-    && echo "Installing Zulu OpenJDK ${ZULU_OPENJDK_VERSION}" \
-    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9 \
-    && echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list \
-    && apt-get -qq update \
-    && apt-get -y install zulu-${ZULU_OPENJDK_VERSION} \
     && echo "===> Installing Kerberos Patch ..." \
     && DEBIAN_FRONTEND=noninteractive apt-get -y install krb5-user \
     && rm -rf /var/lib/apt/lists/* \
