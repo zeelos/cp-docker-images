@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM images.zeelos.io/library/openjdk:8u212-jre-stretch-amd64
+FROM images.zeelos.io/library/openjdk:8u212-jre-stretch-arm64v8
 
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
