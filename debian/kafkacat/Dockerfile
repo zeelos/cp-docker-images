@@ -1,4 +1,4 @@
-FROM zeelos/debian:stretch-slim-amd64
+FROM zeelos/debian:stretch-slim-arm64v8
 
 WORKDIR /build
 
@@ -17,7 +17,7 @@ RUN echo "Building kafkacat ....." \
 
 ###
 
-FROM zeelos/debian:stretch-slim-amd64
+FROM zeelos/debian:stretch-slim-arm64v8
 
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
