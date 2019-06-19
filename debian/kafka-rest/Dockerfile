@@ -20,7 +20,7 @@ LABEL io.confluent.docker.git.id=$COMMIT_ID
 ARG BUILD_NUMBER=-1
 LABEL io.confluent.docker.build.number=$BUILD_NUMBER
 
-MAINTAINER partner-support@confluent.io
+MAINTAINER dev@zeelos.io
 LABEL io.confluent.docker=true
 
 ENV COMPONENT=kafka-rest

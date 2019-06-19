@@ -17,7 +17,7 @@
 
 FROM confluentinc/cp-enterprise-replicator
 
-MAINTAINER partner-support@confluent.io
+MAINTAINER dev@zeelos.io
 LABEL io.confluent.docker=true
 ARG COMMIT_ID=unknown
 LABEL io.confluent.docker.git.id=$COMMIT_ID
